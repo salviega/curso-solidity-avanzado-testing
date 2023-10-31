@@ -1,0 +1,15 @@
+{
+	"compilerOptions": {
+		"target": "es5",
+		"module": "commonjs",
+		"strict": true,
+		"esModuleInterop": true,
+		"outDir": "dist",
+		"resolveJsonModule": true,
+		"noImplicitAny": true,
+		"noImplicitReturns": true
+	},
+	"include": ["deploy", "./test", "deploy-stop/01-deploy-carbon-mumbai.ts"],
+	"exclude": ["node_modules"],
+	"files": ["./hardhat.config.ts"]
+}

@@ -1,0 +1,97 @@
+# ==============================================
+# VS Code Configuration
+# ==============================================
+.vscode
+
+# ==============================================
+# Hardhat and Solidity Development
+# ==============================================
+.notes.md
+artifacts
+cache
+coverage
+coverage.json
+deployments
+gas-report.txt
+node_modules
+typechain
+typechain-types
+
+# ==============================================
+# Environment Variables
+# ==============================================
+.env
+
+# ==============================================
+# Package Managers
+# ==============================================
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# ==============================================
+# Android & Java Development
+# ==============================================
+.DS*
+*.apk
+*.ap_
+*.aab
+*.dex
+*.class
+bin/
+gen/
+out/
+# release/
+.gradle/
+build/
+local.properties
+proguard/
+*.log
+.navigation/
+captures/
+*.iml
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/gradle.xml
+.idea/assetWizardSettings.xml
+.idea/dictionaries
+.idea/libraries
+.idea/caches
+.idea/modules.xml
+.idea/navEditor.xml
+#*.jks
+#*.keystore
+.externalNativeBuild
+# google-services.json
+
+# ==============================================
+# Freeline Configuration
+# ==============================================
+freeline.py
+freeline/
+freeline_project_description.json
+
+# ==============================================
+# Fastlane Configuration
+# ==============================================
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots
+fastlane/test_output
+fastlane/readme.md
+
+# ==============================================
+# Version Control Configuration
+# ==============================================
+vcs.xml
+
+# ==============================================
+# Lint Configuration
+# ==============================================
+lint/intermediates/
+lint/generated/
+lint/outputs/
+lint/tmp/
+# lint/reports/
+gas-report.txt
+contracts/test/fuzzing/crytic-export
