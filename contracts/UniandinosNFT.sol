@@ -7,6 +7,18 @@ import '@openzeppelin/contracts/utils/Counters.sol';
 
 import './interfaces/IUNI.sol';
 
+/**
+ * @title  UniandinosNFT
+ * @dev This contract allows to create NFTs
+ * @notice The owner is only allowed to mint tokens
+ *
+ * @author [salviega]
+ * contact [salviega6gmail.com, salviega.eth]
+ *
+ * version 1.0
+ * date 2023-11-08
+ */
+
 contract UniandinosNFT is ERC721URIStorage, Ownable {
 	using Counters for Counters.Counter;
 
@@ -50,6 +62,13 @@ contract UniandinosNFT is ERC721URIStorage, Ownable {
 	// ************************ //
 	// *      UniandinosNFT   * //
 	// ************************ //
+
+	/** @notice Mints a new NFT.
+	 * @param _artist The address of the artist.
+	 * @param _tokenURI The URI of the token.
+	 * @param _taxFee The tax fee to pay.
+	 * @return tokenId The unique identifier for the token to be minted.
+	 */
 
 	function safeMint(
 		address _artist,
@@ -100,6 +119,15 @@ contract UniandinosNFT is ERC721URIStorage, Ownable {
 
 	// The following functions are overrides required by Solidity.
 
+	/**
+	 * @dev It overrides the ERC721 and IERC721 implementation of transferFrom.
+	 * @notice direct transfer and a taxed transfer where royalties apply.
+	 *
+	 * @param _from The address to transfer the token from.
+	 * @param _to The address to transfer the token to.
+	 * @param _tokenId The unique identifier for the token to be transferred.
+	 */
+
 	function transferFrom(
 		address _from,
 		address _to,
@@ -127,6 +155,14 @@ contract UniandinosNFT is ERC721URIStorage, Ownable {
 	// ************************ //
 	// *       private        * //
 	// ************************ //
+
+	/**
+	 * @notice Pay tax fee to artist.
+	 *
+	 * @param _from The address of the sender.
+	 * @param _artist The address of the artist.
+	 * @param _taxFee The tax fee to pay.
+	 */
 
 	function _payTxFee(address _from, address _artist, uint256 _taxFee) private {
 		if (address(this) == _from) {
