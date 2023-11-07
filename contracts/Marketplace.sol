@@ -8,7 +8,6 @@ import '@openzeppelin/contracts/utils/Strings.sol';
 
 import './UNI.sol';
 import './UniandinosNFT.sol';
-import './utils/Recipient.sol';
 
 /**
  * @title MarketPlace
@@ -23,7 +22,7 @@ import './utils/Recipient.sol';
  * date 2023-11-08
  */
 
-contract Marketplace is Recipient, ReentrancyGuard, Ownable {
+contract Marketplace is ReentrancyGuard, Ownable {
 	using Strings for string;
 	using Counters for Counters.Counter;
 
@@ -73,10 +72,7 @@ contract Marketplace is Recipient, ReentrancyGuard, Ownable {
 	 * @param _uniAddress the UNI contract address
 	 */
 
-	constructor(
-		address _uniAddress,
-		address _uniandinosNFTAddress
-	) Recipient(_uniAddress) {
+	constructor(address _uniAddress, address _uniandinosNFTAddress) {
 		uniandinosNFT = UniandinosNFT(_uniandinosNFTAddress);
 		uni = UNI(_uniAddress);
 	}
@@ -142,7 +138,7 @@ contract Marketplace is Recipient, ReentrancyGuard, Ownable {
 			'buyItem: Insufficient tokens'
 		);
 
-		deposit(items[_itemId].price);
+		uni.transferFrom(msg.sender, address(this), items[_itemId].price);
 
 		uniandinosNFT.transferFrom(
 			address(this),
@@ -179,18 +175,5 @@ contract Marketplace is Recipient, ReentrancyGuard, Ownable {
 		uniandinosNFT = UniandinosNFT(_newUniandinosNFTAddress);
 
 		return address(uniandinosNFT);
-	}
-
-	/** @notice sets the UNI contract address
-    @param _newUniAddress the new UNI contract address
-    @return address the new UNI contract address
-   */
-
-	function setUniAddress(
-		address _newUniAddress
-	) public onlyOwner returns (address) {
-		uni = UNI(_newUniAddress);
-
-		return address(uni);
 	}
 }

@@ -18,18 +18,6 @@ contract Recipient is IERC777Recipient {
 		erc777 = ERC777(_erc777Address);
 	}
 
-	function deposit(uint256 _amount) internal {
-		erc777.operatorSend(msg.sender, address(this), _amount, '', '');
-	}
-
-	function transferTaxFee(
-		address _from,
-		address _artist,
-		uint256 _taxFee
-	) internal {
-		erc777.operatorSend(_from, _artist, _taxFee, '', '');
-	}
-
 	// The following functions are overrides required by Solidity.
 
 	function tokensReceived(

@@ -21,8 +21,7 @@ const deployUni: DeployFunction = async function (
 
 	let args: any[] = [
 		'Uniandino', // _name
-		'UNI', // _symbol
-		[] // _defaultOperators
+		'UNI' // _symbol
 	]
 
 	await deploy('UNI', {

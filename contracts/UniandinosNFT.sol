@@ -88,6 +88,14 @@ contract UniandinosNFT is ERC721URIStorage, Ownable {
 		return tokenId;
 	}
 
+	function transferTaxFee(
+		address _from,
+		address _artist,
+		uint256 _taxFee
+	) internal {
+		uni.transferFrom(_from, _artist, _taxFee);
+	}
+
 	// ************************ //
 	// *  Getters y Setters   * //
 	// ************************ //
@@ -102,6 +110,18 @@ contract UniandinosNFT is ERC721URIStorage, Ownable {
 		address _excluded
 	) external view returns (bool _isExcluded) {
 		return excludedListByArtist[_artist][_excluded];
+	}
+
+	/** @notice sets the address of the marketplace contract.
+	 * @param _newMarketplaceAddress the new marketplace contract address.
+	 */
+
+	function setMarketplaceAddress(
+		address _newMarketplaceAddress
+	) public onlyOwner returns (address) {
+		marketplaceAddress = _newMarketplaceAddress;
+
+		return marketplaceAddress;
 	}
 
 	/** @dev Select address that don't pay tax fee.
@@ -164,12 +184,17 @@ contract UniandinosNFT is ERC721URIStorage, Ownable {
 	 * @param _taxFee The tax fee to pay.
 	 */
 
-	function _payTxFee(address _from, address _artist, uint256 _taxFee) private {
+	function _payTxFee(
+		address _from,
+		address _artist,
+		uint256 _taxFee
+	) private view {
 		if (address(this) == _from) {
 			return;
 		}
 
 		require(uni.balanceOf(_from) >= _taxFee, '_payTxFee: Insufficient tokens');
-		uni.operatorSend(_from, _artist, _taxFee, '', '');
+		uni.transferFrom;
+		(_from, _artist, _taxFee);
 	}
 }
