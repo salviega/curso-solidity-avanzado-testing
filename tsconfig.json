@@ -9,7 +9,15 @@
 		"noImplicitAny": true,
 		"noImplicitReturns": true
 	},
-	"include": ["deploy", "./test", "deploy-stop/01-deploy-carbon-mumbai.ts"],
+	"include": [
+		"deploy",
+		"./test",
+		"deploy-stop/01-deploy-carbon-mumbai.ts",
+		"models/02-deploy-faucet.ts",
+		"models/03-deploy-uniandinos-nft.ts",
+		"models/04-deploy-marketplace.ts",
+		"models/01-deploy-uni.ts"
+	],
 	"exclude": ["node_modules"],
 	"files": ["./hardhat.config.ts"]
 }
