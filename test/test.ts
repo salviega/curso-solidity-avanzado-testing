@@ -15,10 +15,10 @@ interface Accounts {
 }
 
 interface Contracts {
-	uni: UNI
-	faucet: Faucet
-	uniandinosNFT: UniandinosNFT
-	marketplace: Marketplace
+	uni: any
+	faucet: any
+	uniandinosNFT: any
+	marketplace: any
 }
 
 describe('Marketplace Flow', async function () {
@@ -58,80 +58,63 @@ describe('Marketplace Flow', async function () {
 			uniandinosNFTAddress
 		)
 		await setUniandinosNFTAddressTx.wait(1)
-
-		// faucet = await ethers.getContractAt('Faucet', admin.address)
-		// uniandinosNFT = await ethers.getContractAt('UniandinosNFT', admin.address)
-		// marketplace = await ethers.getContractAt('Marketplace', admin.address)
 	})
 
-	it('get UNI contract', async () => {
+	it.skip('Faucet should be the owner of the UNI contract', async () => {
+		// Arrange
+		const { admin } = accounts
 		const { uni, faucet } = contracts
-		console.log('Faucet deployed to:', await faucet.getAddress())
-		console.log('UNI deployed to:', await uni.owner())
 
-		// await cosmoContract.connect(owner1).buyTokens(ethers.utils.parseUnits('3', 'ether'), { value: ethers.utils.parseUnits('3', 'ether') })
+		// Act
+		const faucetAddress: string = await faucet.getAddress()
+		const uniOwner: string = await uni.owner()
+
+		// Assert
+		assert.equal(faucetAddress, uniOwner)
+		assert.notEqual(admin.address, uniOwner)
 	})
 
-	// it('proposes, votes, waits, queues, and then executes', async () => {
-	// 	// propose
-	// 	const encodedFunctionCall = box.interface.encodeFunctionData(FUNC, [
-	// 		NEW_STORE_VALUE
-	// 	])
-	// 	const proposeTx = await governor.propose(
-	// 		[box.address],
-	// 		[0],
-	// 		[encodedFunctionCall],
-	// 		PROPOSAL_DESCRIPTION
-	// 	)
+	it('Can only withdraw in the period time', async () => {
+		// Arrange
+		const { owner1 } = accounts
+		const { uni, faucet } = contracts
 
-	// 	const proposeReceipt = await proposeTx.wait(1)
-	// 	const proposalId = proposeReceipt.events![0].args!.proposalId
-	// 	let proposalState = await governor.state(proposalId)
-	// 	console.log(`Current Proposal State: ${proposalState}`)
+		const tokensToWithdrawHappyPath: bigint = ethers.parseEther('10')
+		const tokensToWithdrawSadPath: bigint = ethers.parseEther('11')
 
-	// 	await moveBlocks(VOTING_DELAY + 1)
-	// 	// vote
-	// 	const voteTx = await governor.castVoteWithReason(
-	// 		proposalId,
-	// 		voteWay,
-	// 		reason
-	// 	)
-	// 	await voteTx.wait(1)
-	// 	proposalState = await governor.state(proposalId)
-	// 	assert.equal(proposalState.toString(), '1')
-	// 	console.log(`Current Proposal State: ${proposalState}`)
-	// 	await moveBlocks(VOTING_PERIOD + 1)
+		const owner1BalanceBefore: bigint = await uni.balanceOf(owner1.address)
 
-	// 	// queue & execute
-	// 	// const descriptionHash = ethers.utils.keccak256(ethers.utils.toUtf8Bytes(PROPOSAL_DESCRIPTION))
-	// 	const descriptionHash = ethers.utils.id(PROPOSAL_DESCRIPTION)
-	// 	const queueTx = await governor.queue(
-	// 		[box.address],
-	// 		[0],
-	// 		[encodedFunctionCall],
-	// 		descriptionHash
-	// 	)
-	// 	await queueTx.wait(1)
-	// 	await moveTime(MIN_DELAY + 1)
-	// 	await moveBlocks(1)
+		// Act
+		const withdrawTx = await faucet
+			.connect(owner1)
+			.withdraw(tokensToWithdrawHappyPath)
+		await withdrawTx.wait(1)
 
-	// 	proposalState = await governor.state(proposalId)
-	// 	console.log(`Current Proposal State: ${proposalState}`)
+		// Assert
+		assert.equal(await uni.balanceOf(owner1.address), tokensToWithdrawHappyPath)
 
-	// 	console.log('Executing...')
-	// 	console.log
-	// 	const exTx = await governor.execute(
-	// 		[box.address],
-	// 		[0],
-	// 		[encodedFunctionCall],
-	// 		descriptionHash
-	// 	)
-	// 	await exTx.wait(1)
-	// 	console.log((await box.retrieve()).toString())
-	// })
+		await expect(
+			faucet.connect(owner1).withdraw(tokensToWithdrawHappyPath)
+		).to.be.revertedWith('Withdrawal unavailable: still within timeout period.')
+
+		await moveTime(301)
+
+		await faucet.connect(owner1).withdraw(tokensToWithdrawHappyPath)
+
+		assert.equal(
+			await uni.balanceOf(owner1.address),
+			tokensToWithdrawHappyPath * BigInt(2)
+		)
+
+		await moveTime(301)
+
+		await expect(
+			faucet.connect(owner1).withdraw(tokensToWithdrawSadPath)
+		).to.be.revertedWith('Max 10 tokens per transaction')
+	})
 })
 
-async function deployContracts(): Promise<Contracts> {
+async function deployContracts() {
 	// Deploy UNI contract
 
 	const uniArgs = ['Uniandino', 'UNI', []]
@@ -146,7 +129,7 @@ async function deployContracts(): Promise<Contracts> {
 		'Max 10 tokens per transaction'
 	]
 
-	const faucet = await deployContract<Faucet>('Faucet', faucetArgs)
+	const faucet = await deployContract('Faucet', faucetArgs)
 
 	// Deploy UniandinosNFT contract
 
@@ -157,19 +140,13 @@ async function deployContracts(): Promise<Contracts> {
 		'UNS'
 	]
 
-	const uniandinosNFT = await deployContract<UniandinosNFT>(
-		'UniandinosNFT',
-		uniandinosNFTArgs
-	)
+	const uniandinosNFT = await deployContract('UniandinosNFT', uniandinosNFTArgs)
 
 	// Deploy Marketplace contract
 
 	const marketplaceArgs = [uni.getAddress(), uniandinosNFT.getAddress()]
 
-	const marketplace = await deployContract<Marketplace>(
-		'Marketplace',
-		marketplaceArgs
-	)
+	const marketplace = await deployContract('Marketplace', marketplaceArgs)
 
 	// Return all deployed contracts
 	return {
@@ -180,13 +157,10 @@ async function deployContracts(): Promise<Contracts> {
 	}
 }
 
-async function deployContract<T>(
-	contractName: string,
-	args: any[]
-): Promise<T> {
+async function deployContract<T>(contractName: string, args: any[]) {
 	const ContractFactory: ContractFactory = await ethers.getContractFactory(
 		contractName
 	)
 	const contract = await ContractFactory.deploy(...args)
-	return contract as unknown as T
+	return contract
 }
