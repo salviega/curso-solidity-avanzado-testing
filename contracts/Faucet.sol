@@ -136,11 +136,13 @@ contract Faucet is Ownable {
 	function _setMessageWithdrawRequire(
 		uint256 _newSupply
 	) private pure returns (string memory) {
+		uint256 nexSupplyModif = _newSupply / 1 ether;
+
 		return
 			string(
 				abi.encodePacked(
 					'Max ',
-					_newSupply.toString(),
+					nexSupplyModif.toString(),
 					' tokens per transaction'
 				)
 			);
