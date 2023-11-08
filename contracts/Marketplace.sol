@@ -3,6 +3,7 @@ pragma solidity ^0.8.19;
 
 import '@openzeppelin/contracts/access/Ownable.sol';
 import '@openzeppelin/contracts/security/ReentrancyGuard.sol';
+import '@openzeppelin/contracts/token/ERC721/IERC721Receiver.sol';
 import '@openzeppelin/contracts/utils/Counters.sol';
 import '@openzeppelin/contracts/utils/Strings.sol';
 
@@ -22,7 +23,7 @@ import './UniandinosNFT.sol';
  * date 2023-11-08
  */
 
-contract Marketplace is ReentrancyGuard, Ownable {
+contract Marketplace is IERC721Receiver, ReentrancyGuard, Ownable {
 	using Strings for string;
 	using Counters for Counters.Counter;
 
@@ -95,7 +96,7 @@ contract Marketplace is ReentrancyGuard, Ownable {
 		uint256 _taxFee
 	) public onlyOwner {
 		require(_artist != address(0), 'sellItem: Invalid artist address');
-		require(_tokenURI.equal(''), 'sellItem: Invalid token URI');
+		require(!_tokenURI.equal(''), 'sellItem: Invalid token URI');
 		require(_price > 0, 'sellItem: Invalid price');
 		require(_taxFee > 0 && _taxFee <= _price, 'sellItem: Invalid tax fee');
 
@@ -112,6 +113,8 @@ contract Marketplace is ReentrancyGuard, Ownable {
 			address(uniandinosNFT),
 			address(uni)
 		);
+
+		items[itemId] = item;
 
 		emit Offerd(
 			item.itemId,
@@ -158,6 +161,17 @@ contract Marketplace is ReentrancyGuard, Ownable {
 			item.uniAddress,
 			msg.sender
 		);
+	}
+
+	// The following functions are overrides required by Solidity.
+
+	function onERC721Received(
+		address,
+		address,
+		uint256,
+		bytes memory
+	) public virtual override returns (bytes4) {
+		return this.onERC721Received.selector;
 	}
 
 	// ************************ //

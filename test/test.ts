@@ -4,7 +4,7 @@ import { assert, expect } from 'chai'
 
 import { moveBlocks } from '../utils/move-blocks'
 import { moveTime } from '../utils/move-time'
-import { ContractFactory } from 'ethers'
+import { ContractFactory, MaxUint256 } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
 
 interface Accounts {
@@ -58,9 +58,14 @@ describe('Marketplace Flow', async function () {
 			uniandinosNFTAddress
 		)
 		await setUniandinosNFTAddressTx.wait(1)
+
+		let transferMarketplaceOwnershipTx = await uniandinosNFT.transferOwnership(
+			marketplaceAddress
+		)
+		await transferMarketplaceOwnershipTx.wait(1)
 	})
 
-	it.skip('Faucet should be the owner of the UNI contract', async () => {
+	it('Faucet should be the owner of the UNI contract', async () => {
 		// Arrange
 		const { admin } = accounts
 		const { uni, faucet } = contracts
@@ -74,7 +79,7 @@ describe('Marketplace Flow', async function () {
 		assert.notEqual(admin.address, uniOwner)
 	})
 
-	it.skip('Can only withdraw in the period time', async () => {
+	it('Can only withdraw in the period time', async () => {
 		// Arrange
 		const { owner1 } = accounts
 		const { uni, faucet } = contracts
@@ -99,8 +104,8 @@ describe('Marketplace Flow', async function () {
 		).to.be.revertedWith('Withdrawal unavailable: still within timeout period.')
 		console.log('✅ owner1 should not be able to withdraw more than 10 UNI')
 
+		// Act
 		await moveTime(301)
-
 		await faucet.connect(owner1).withdraw(tokensToWithdrawHappyPath)
 
 		// Assert: owner1 balance should be increased by 20 UNI
@@ -110,6 +115,7 @@ describe('Marketplace Flow', async function () {
 		)
 		console.log('✅ owner1 balance should be increased by 20 UNI')
 
+		// Act
 		await moveTime(301)
 
 		// Assert: owner1 should not be able to withdraw more than 11 UNI
@@ -130,15 +136,213 @@ describe('Marketplace Flow', async function () {
 		// Act
 		await faucet.setMaxSupply(newMaxSupply)
 
-		// Assert
+		// Assert: max supply should be set to 20 UNI
 		assert.equal(await faucet.maxSupply(), newMaxSupply)
 		console.log('✅ Max supply should be set to 20 UNI')
 
+		// Act
 		await moveTime(301)
 
+		// Assert
 		await expect(
 			faucet.connect(admin).withdraw(tokensToWithdraw)
 		).to.be.revertedWith('Max 20 tokens per transaction')
+		console.log('✅ admin should not be able to withdraw more than 20 UNI')
+	})
+
+	it('Sell NFT', async () => {
+		// Arrange
+		const { admin, artist, owner1 } = accounts
+		const { uni, faucet, marketplace, uniandinosNFT } = contracts
+
+		let iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+
+		const art: string = 'https://ip'
+		const price: bigint = ethers.parseEther('5')
+
+		// Act
+		const tokenId: bigint = await uniandinosNFT.tokenIdCounter()
+		await marketplace
+			.connect(admin)
+			.sellItem(artist.address, art, price, taxFee)
+
+		// Assert
+		expect(await uniandinosNFT.ownerOf(tokenId)).to.equal(
+			await marketplace.getAddress()
+		)
+		console.log('✅ NFT should be owned by marketplace')
+
+		// Act
+		const currentIteamId: bigint = await marketplace.itemCounter()
+
+		;[
+			iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+		] = await marketplace.items(currentIteamId)
+
+		// Assert
+		expect(iteamId).to.equal(currentIteamId)
+		console.log('✅ Item id should be equal to current item id')
+		expect(itemPrice).to.equal(price)
+		console.log('✅ Item price should be equal to price')
+		expect(itemSold).to.equal(false)
+		console.log('✅ Item sold should be false')
+		expect(itemTokenId).to.equal(tokenId)
+		console.log('✅ Item tokenId should be equal to tokenId')
+		expect(itemUniandinosNFTAddress).to.equal(await uniandinosNFT.getAddress())
+		console.log('✅ Item uniandinosNFTAddress should be equal to uniandinosNFT')
+		expect(ItemUniAddress).to.equal(await uni.getAddress())
+		console.log('✅ Item uniAddress should be equal to uni')
+	})
+
+	it('Buy NFT', async () => {
+		// Arrange
+		const { admin, artist, owner1 } = accounts
+		const { uni, faucet, marketplace, uniandinosNFT } = contracts
+
+		let iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+
+		const art: string = 'https://ip'
+		const price: bigint = ethers.parseEther('5')
+
+		// Act
+		const tokenId: bigint = await uniandinosNFT.tokenIdCounter()
+		await marketplace
+			.connect(admin)
+			.sellItem(artist.address, art, price, taxFee)
+
+		const currentIteamId: bigint = await marketplace.itemCounter()
+
+		;[
+			iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+		] = await marketplace.items(currentIteamId)
+
+		await faucet.connect(owner1).withdraw(price)
+
+		await uni
+			.connect(owner1)
+			.approve(await marketplace.getAddress(), MaxUint256)
+
+		await marketplace.connect(owner1).buyItem(iteamId)
+		;[
+			iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+		] = await marketplace.items(currentIteamId)
+
+		// Assert
+		expect(await uniandinosNFT.ownerOf(tokenId)).to.equal(owner1.address)
+		console.log('✅ NFT should be owned by owner1')
+		expect(itemSold).to.equal(true)
+		console.log('✅ Item sold should be true')
+	})
+
+	it('Transfer NFT and pay tax', async () => {
+		// Arrange
+		const { admin, artist, owner1, owner2 } = accounts
+		const { uni, faucet, marketplace, uniandinosNFT } = contracts
+
+		let iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+
+		const art: string = 'https://ip'
+		const price: bigint = ethers.parseEther('5')
+
+		// Act
+		const tokenId: bigint = await uniandinosNFT.tokenIdCounter()
+		await marketplace
+			.connect(admin)
+			.sellItem(artist.address, art, price, taxFee)
+
+		const currentIteamId: bigint = await marketplace.itemCounter()
+
+		;[
+			iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+		] = await marketplace.items(currentIteamId)
+
+		await faucet.connect(owner1).withdraw(price + taxFee)
+
+		await uni
+			.connect(owner1)
+			.approve(await marketplace.getAddress(), MaxUint256)
+
+		await marketplace.connect(owner1).buyItem(iteamId)
+		;[
+			iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+		] = await marketplace.items(currentIteamId)
+
+		// Act
+		const isExcluded = await uniandinosNFT.isExcluded(
+			artist.address,
+			owner2.address
+		)
+
+		// Assert
+		expect(isExcluded).to.equal(false)
+		console.log('✅ artist should not be excluded')
+
+		// Act
+		await uniandinosNFT.connect(owner1).approve(owner2.address, tokenId)
+		await uni.connect(owner1).approve(uniandinosNFT, taxFee)
+
+		await uniandinosNFT
+			.connect(owner1)
+			.transferFrom(owner1.address, owner2.address, tokenId)
+
+		// Assert
+		expect(await uniandinosNFT.ownerOf(tokenId)).to.equal(owner2.address)
+		console.log('✅ NFT should be owned by owner2')
+
+		// act
+		;[
+			iteamId,
+			itemPrice,
+			itemSold,
+			itemTokenId,
+			itemUniandinosNFTAddress,
+			ItemUniAddress
+		] = await marketplace.items(currentIteamId)
+
+		expect(await uni.balanceOf(artist.address)).to.equal(taxFee)
+		console.log('✅ owner2 balance should be equal to taxFee')
+		expect(await uni.balanceOf(owner1.address)).to.equal(0)
+		console.log('✅ owner1 balance should be 0')
 	})
 })
 
