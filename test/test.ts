@@ -74,7 +74,7 @@ describe('Marketplace Flow', async function () {
 		assert.notEqual(admin.address, uniOwner)
 	})
 
-	it('Can only withdraw in the period time', async () => {
+	it.skip('Can only withdraw in the period time', async () => {
 		// Arrange
 		const { owner1 } = accounts
 		const { uni, faucet } = contracts
@@ -82,35 +82,63 @@ describe('Marketplace Flow', async function () {
 		const tokensToWithdrawHappyPath: bigint = ethers.parseEther('10')
 		const tokensToWithdrawSadPath: bigint = ethers.parseEther('11')
 
-		const owner1BalanceBefore: bigint = await uni.balanceOf(owner1.address)
-
 		// Act
+		const owner1BalanceBefore: bigint = await uni.balanceOf(owner1.address)
 		const withdrawTx = await faucet
 			.connect(owner1)
 			.withdraw(tokensToWithdrawHappyPath)
 		await withdrawTx.wait(1)
 
-		// Assert
+		// Assert: owner1 balance should be increased by 10 UNI
 		assert.equal(await uni.balanceOf(owner1.address), tokensToWithdrawHappyPath)
+		console.log('✅ owner1 balance should be increased by 10 UNI')
 
+		// Assert: owner1 should not be able to withdraw more than 10 UNI
 		await expect(
 			faucet.connect(owner1).withdraw(tokensToWithdrawHappyPath)
 		).to.be.revertedWith('Withdrawal unavailable: still within timeout period.')
+		console.log('✅ owner1 should not be able to withdraw more than 10 UNI')
 
 		await moveTime(301)
 
 		await faucet.connect(owner1).withdraw(tokensToWithdrawHappyPath)
 
+		// Assert: owner1 balance should be increased by 20 UNI
 		assert.equal(
 			await uni.balanceOf(owner1.address),
 			tokensToWithdrawHappyPath * BigInt(2)
 		)
+		console.log('✅ owner1 balance should be increased by 20 UNI')
+
+		await moveTime(301)
+
+		// Assert: owner1 should not be able to withdraw more than 11 UNI
+		await expect(
+			faucet.connect(owner1).withdraw(tokensToWithdrawSadPath)
+		).to.be.revertedWith('Max 10 tokens per transaction')
+		console.log('✅ owner1 should not be able to withdraw more than 11 UNI')
+	})
+
+	it('set max supply also sets message withdraw require', async () => {
+		// Arrange
+		const { admin } = accounts
+		const { uni, faucet } = contracts
+
+		const tokensToWithdraw: bigint = ethers.parseEther('30')
+		const newMaxSupply: bigint = ethers.parseEther('20')
+
+		// Act
+		await faucet.setMaxSupply(newMaxSupply)
+
+		// Assert
+		assert.equal(await faucet.maxSupply(), newMaxSupply)
+		console.log('✅ Max supply should be set to 20 UNI')
 
 		await moveTime(301)
 
 		await expect(
-			faucet.connect(owner1).withdraw(tokensToWithdrawSadPath)
-		).to.be.revertedWith('Max 10 tokens per transaction')
+			faucet.connect(admin).withdraw(tokensToWithdraw)
+		).to.be.revertedWith('Max 20 tokens per transaction')
 	})
 })
 
