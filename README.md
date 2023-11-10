@@ -9,7 +9,7 @@ Prerequisites: [Node (v20 LTS)](https://nodejs.org/en/download/) and [Git](https
 > Clone the repository:
 
 ```
-git clone https://github.com/salviega/cross-carbon-contracts.git
+git clone https://github.com/salviega/curso-solidity-avanzado-testing.git
 ```
 
 > Install dependencies:
@@ -21,7 +21,7 @@ yarn
 > Run the project:
 
 ```
-yarn chain
+yarn test
 ```
 
 ## Authors 🏗

@@ -1,8 +1,6 @@
-import { Faucet, Marketplace, UNI, UniandinosNFT } from '../typechain-types'
-import { deployments, ethers } from 'hardhat'
+import { ethers } from 'hardhat'
 import { assert, expect } from 'chai'
 
-import { moveBlocks } from '../utils/move-blocks'
 import { moveTime } from '../utils/move-time'
 import { ContractFactory, MaxUint256 } from 'ethers'
 import { SignerWithAddress } from '@nomiclabs/hardhat-ethers/signers'
@@ -350,7 +348,7 @@ async function deployContracts() {
 	// Deploy UNI contract
 
 	const uniArgs = ['Uniandino', 'UNI', []]
-	const uni = await deployContract<UNI>('UNI', uniArgs)
+	const uni = await deployContract('UNI', uniArgs)
 
 	// Deploy Faucet contract
 
@@ -389,7 +387,7 @@ async function deployContracts() {
 	}
 }
 
-async function deployContract<T>(contractName: string, args: any[]) {
+async function deployContract(contractName: string, args: any[]) {
 	const ContractFactory: ContractFactory = await ethers.getContractFactory(
 		contractName
 	)
